@@ -9,7 +9,6 @@ import { savePlayerUsername } from "@/lib/game-state";
 export const Route = createFileRoute("/")({ component: Home });
 
 function Home() {
-  const [query, setQuery] = useState("");
   const [region, setRegion] = useState<"all" | "europe" | "russia" | "china">("all");
   const [username, setUsername] = useState("");
   const [savedUsername, setSavedUsername] = useState("");
@@ -28,14 +27,10 @@ function Home() {
   const lanes = useOpsStore((state) => state.lanes);
   const originId = useOpsStore((state) => state.originId);
   const routing = useOpsStore((state) => state.routing);
-  const filteredHubs = useMemo(() => {
-    const normalized = query.trim().toLowerCase();
-    return HUBS.filter((hub) => {
-      const matchesRegion = region === "all" || hub.region === region;
-      const matchesQuery = !normalized || hub.name.toLowerCase().includes(normalized);
-      return matchesRegion && matchesQuery;
-    }).slice(0, 12);
-  }, [query, region]);
+  const filteredHubs = useMemo(
+    () => HUBS.filter((hub) => region === "all" || hub.region === region).slice(0, 12),
+    [region],
+  );
 
   const selectHub = (id: string) => {
     (window as Window & { __selectHub?: (hubId: string) => void }).__selectHub?.(id);
@@ -62,11 +57,6 @@ function Home() {
         <p className="dispatch-panel__hint">
           {originId ? "Select a destination city on the map." : "Select an origin city to open a lane."}
         </p>
-        <label className="city-search">
-          <span className="sr-only">Search city</span>
-          <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search a city" />
-          <span aria-hidden="true">⌕</span>
-        </label>
         <div className="region-tabs" role="tablist" aria-label="Regions">
           {(["all", "europe", "russia", "china"] as const).map((item) => (
             <button key={item} className={region === item ? "is-active" : ""} onClick={() => setRegion(item)} role="tab" aria-selected={region === item}>

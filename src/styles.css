@@ -159,9 +159,6 @@
 .dispatch-panel__eyebrow, .dispatch-panel__footer, .map-legend { font: 500 9px var(--font-mono); letter-spacing: .12em; text-transform: uppercase; color: var(--color-muted); }
 .dispatch-panel h2 { margin: 7px 0 5px; font-size: 18px; font-weight: 500; letter-spacing: -.02em; }
 .dispatch-panel__hint { margin: 0 0 14px; color: var(--color-muted); font-size: 11px; line-height: 1.45; }
-.city-search { display: flex; align-items: center; gap: 8px; padding: 8px 10px; border: 1px solid var(--color-border); border-radius: 6px; color: var(--color-muted); }
-.city-search input { min-width: 0; flex: 1; border: 0; outline: 0; background: transparent; color: var(--color-fg); font: 12px var(--font-sans); }
-.city-search input::placeholder { color: var(--color-muted); }
 .region-tabs { display: flex; gap: 4px; margin: 11px 0; }
 .region-tabs button { border: 0; border-radius: 4px; padding: 5px 7px; background: transparent; color: var(--color-muted); font: 10px var(--font-mono); text-transform: capitalize; }
 .region-tabs button.is-active { background: var(--color-accent); color: var(--color-bg); }
