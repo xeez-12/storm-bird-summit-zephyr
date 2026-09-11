@@ -1,15 +1,12 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { RevenueChip } from "@/components/revenue-chip";
 import { SatelliteMap } from "@/components/satellite-map";
-import { HUBS } from "@/data/hubs";
-import { useOpsStore } from "@/store/ops";
 import { savePlayerUsername } from "@/lib/game-state";
 
 export const Route = createFileRoute("/")({ component: Home });
 
 function Home() {
-  const [region, setRegion] = useState<"all" | "europe" | "russia" | "china">("all");
   const [username, setUsername] = useState("");
   const [savedUsername, setSavedUsername] = useState("");
   const [usernameError, setUsernameError] = useState("");
@@ -24,18 +21,6 @@ function Home() {
       setUsernameError(error instanceof Error ? error.message : "Unable to save username.");
     }
   };
-  const lanes = useOpsStore((state) => state.lanes);
-  const originId = useOpsStore((state) => state.originId);
-  const routing = useOpsStore((state) => state.routing);
-  const filteredHubs = useMemo(
-    () => HUBS.filter((hub) => region === "all" || hub.region === region).slice(0, 12),
-    [region],
-  );
-
-  const selectHub = (id: string) => {
-    (window as Window & { __selectHub?: (hubId: string) => void }).__selectHub?.(id);
-  };
-
   return (
     <main className="map-stage">
       <h1 className="sr-only">Meridian logistics manager</h1>
@@ -51,30 +36,6 @@ function Home() {
         <button type="submit">{savedUsername || "SAVE"}</button>
         {usernameError ? <small role="alert">{usernameError}</small> : null}
       </form>
-      <aside className="dispatch-panel" aria-label="Dispatch controls">
-        <div className="dispatch-panel__eyebrow">NETWORK CONTROL / 01</div>
-        <h2>Build your freight network</h2>
-        <p className="dispatch-panel__hint">
-          {originId ? "Select a destination city on the map." : "Select an origin city to open a lane."}
-        </p>
-        <div className="region-tabs" role="tablist" aria-label="Regions">
-          {(["all", "europe", "russia", "china"] as const).map((item) => (
-            <button key={item} className={region === item ? "is-active" : ""} onClick={() => setRegion(item)} role="tab" aria-selected={region === item}>
-              {item === "all" ? "All" : item}
-            </button>
-          ))}
-        </div>
-        <div className="city-list">
-          {filteredHubs.map((hub) => (
-            <button className="city-row" key={hub.id} onClick={() => selectHub(hub.id)} disabled={routing}>
-              <span className={`city-dot city-dot--${hub.region}`} />
-              <span><strong>{hub.name}</strong><small>{hub.region} / {hub.lat.toFixed(2)}°N / cargo hub</small></span>
-              <span className="city-arrow">→</span>
-            </button>
-          ))}
-        </div>
-        <footer className="dispatch-panel__footer"><span>{lanes.length.toString().padStart(2, "0")} ACTIVE LANES</span><span className={routing ? "is-live" : ""}>{routing ? "CALCULATING" : "SYSTEM LIVE"}</span></footer>
-      </aside>
       <div className="map-legend" aria-label="Map legend"><span><i className="legend-dot legend-dot--europe" />EUROPE</span><span><i className="legend-dot legend-dot--russia" />RUSSIA</span><span><i className="legend-dot legend-dot--china" />CHINA</span></div>
     </main>
   );
