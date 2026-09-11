@@ -24,11 +24,6 @@ const SIBERIA: LngLat[] = [
   { lng: 117.4792, lat: 49.5977 },
 ];
 
-const OSRM_ENDPOINTS = [
-  "https://router.project-osrm.org/route/v1/driving",
-  "https://routing.openstreetmap.de/routed-car/route/v1/driving",
-];
-
 function corridorVias(from: Hub, to: Hub): LngLat[] {
   const regions = new Set([from.region, to.region]);
   if (regions.size === 1) return [];
@@ -51,67 +46,16 @@ function corridorVias(from: Hub, to: Hub): LngLat[] {
   return corridor.filter((via) => via.lng > minLng && via.lng < maxLng);
 }
 
-function pathString(points: LngLat[]): string {
-  return points.map((p) => `${p.lng.toFixed(5)},${p.lat.toFixed(5)}`).join(";");
-}
-
-async function osrmRoute(points: LngLat[], signal: AbortSignal): Promise<RoadRoute> {
-  const path = pathString(points);
-  const query = "overview=full&geometries=geojson&steps=false&annotations=false";
-  let lastError: Error | null = null;
-
-  for (const base of OSRM_ENDPOINTS) {
-    try {
-      const response = await fetch(`${base}/${path}?${query}`, { signal });
-      if (!response.ok) {
-        lastError = new Error(`OSRM ${response.status}`);
-        continue;
-      }
-      const body = (await response.json()) as {
-        code?: string;
-        routes?: {
-          distance: number;
-          geometry?: { coordinates?: [number, number][] };
-        }[];
-      };
-      const geometry = body.routes?.[0]?.geometry?.coordinates;
-      if (body.code !== "Ok" || !geometry || geometry.length < 2) {
-        lastError = new Error("No route");
-        continue;
-      }
-      const km = (body.routes?.[0]?.distance ?? 0) / 1000;
-      return { coordinates: geometry, km: km || lineDistanceKm(geometry), onRoad: true };
-    } catch (error) {
-      if (error instanceof DOMException && error.name === "AbortError") throw error;
-      lastError = error instanceof Error ? error : new Error("OSRM failed");
-    }
-  }
-
-  throw lastError ?? new Error("OSRM failed");
-}
-
 export async function fetchRoadRoute(from: Hub, to: Hub): Promise<RoadRoute> {
-  const controller = new AbortController();
-  const timer = window.setTimeout(() => controller.abort(), 9000);
   const vias = corridorVias(from, to);
-  const direct = [from, to];
-  const withVias = [from, ...vias, to];
-
-  try {
-    try {
-      return await osrmRoute(vias.length ? withVias : direct, controller.signal);
-    } catch {
-      if (vias.length) {
-        return await osrmRoute(direct, controller.signal);
-      }
-      throw new Error("No road");
-    }
-  } catch {
-    const coordinates = greatCircle(from, to);
-    return { coordinates, km: lineDistanceKm(coordinates), onRoad: false };
-  } finally {
-    window.clearTimeout(timer);
-  }
+  const coordinates: [number, number][] = vias.length
+    ? [from, ...vias, to].map((point) => [point.lng, point.lat])
+    : greatCircle(from, to);
+  return {
+    coordinates,
+    km: lineDistanceKm(coordinates),
+    onRoad: vias.length > 0,
+  };
 }
 
 export function pairKey(a: string, b: string): string {
